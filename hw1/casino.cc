@@ -15,7 +15,6 @@ int play(custom_rng c){
 }
 
 int main(){
-
 	// Play 1e9 games and calculate the total winnings 
 	int w=0;
 #pragma omp parallel for reduction(+:w)

@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstdio>
+#include "omp.h"
 
 /** Find all numbers less than n
  * \param[in] A A[i]=1 implies (i+2) is prime. */
@@ -37,6 +38,7 @@ int count(int* d,int K,int B,int n=2e5){
 	// Find all prime numbers less than n
 	sieve(n,A);
 	int count=0;
+#pragma omp parallel for reduction(+:c) 
 	for(int i=0;i<n-1;i++){
 		if(A[i]==1){
 			int* e=new int[K+1];

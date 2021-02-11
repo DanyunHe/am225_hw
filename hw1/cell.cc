@@ -1,7 +1,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-
+#include "omp.h"
 
 /** Custom random number generator based of "Ran" routine in Numerical Recipes
  * by Press et al. */
@@ -41,8 +41,8 @@ custom_rng rng=custom_rng(0); // random number generator
 void init(){
 	for(int i=0;i<m;i++){
 		for(int j=0;j<n;j++){
-			if((i>=m/2-6)&&(i<m/2-6)&&(j>=n/2-6)&&(j<n/2-6)){
-				if(rng.doub()>=3/4.){c[j+n*i]=1;}
+			if((i>=m/2-6)&&(i<m/2+6)&&(j>=n/2-6)&&(j<n/2+6)){
+				if(rng.doub()<0.75){c[j+n*i]=1;}
 				else{c[j+n*i]=0;}
 			}
 			else{c[j+n*i]=0;}
@@ -54,6 +54,8 @@ void init(){
 void generate(){
 
 	int nij;
+
+#pragma omp parallel for collapse(2)
 	for(int i=0;i<m;i++){
 		for(int j=0;j<n;j++){
 
@@ -98,18 +100,26 @@ void output(char* filename){
 
 int main(){
 
+	double t0=omp_get_wtime();
 	init();
-	for(int t=0;t<151;t++){
+	int duration=151;
+	for(int t=0;t<duration;t++){
 		if(t%25==0){
 			char fn[10];
 			sprintf(fn,"%d.out",t);
 			output(fn);
 		}
+
 		generate();
 	}
 
 	delete [] c;
 	delete [] cc;
+
+	double t1=omp_get_wtime();
+	int num_thread=omp_get_max_threads();
+	printf("running time for n %d,number of threads %d is %f\n",n,num_thread,(t1-t0)/duration);
+
 	return 0;
 
 }

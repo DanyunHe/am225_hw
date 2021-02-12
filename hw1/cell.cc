@@ -33,6 +33,7 @@ class custom_rng{
 
 const int m=80;
 const int n=40;
+// const int me=m+2,ne=n+2;
 int* c=new int[m*n]; //cellular automaton on m by n grid 
 int* cc=new int[m*n]; // next step cell grid 
 custom_rng rng=custom_rng(0); // random number generator
@@ -55,26 +56,28 @@ void generate(){
 
 	int nij;
 
-#pragma omp parallel for collapse(2)
+#pragma omp parallel for 
 	for(int i=0;i<m;i++){
+		// Boundary condition
+		// int il=(i==0)?m-1:i-1;
+		// int ir=(i==m-1)?0:i+1;
 		for(int j=0;j<n;j++){
+			int il=(i==0)?m-1:i-1;
+			int ir=(i==m-1)?0:i+1;
+			int jl=(j==0)?n-1:j-1;
+			int jr=(j==n-1)?0:j+1;
 
 			// Calculate Nij for cell at (i,j)
-			nij=0;
+			nij=c[ir*n+jl]+c[ir*n+j]+c[ir*n+jr]+c[i*n+jl]
+				+c[i*n+jr]+c[il*n+jl]+c[il*n+j]+c[il*n+jr];
 			int idx=j+i*n;
-			if(c[idx+1]==1) nij++;
-			if(c[idx-1]==1) nij++;
-			if(c[idx+n]==1) nij++;
-			if(c[idx-n]==1) nij++;
-			if(c[idx+n+1]==1) nij++;
-			if(c[idx+n-1]==1) nij++;
-			if(c[idx-n+1]==1) nij++;
-			if(c[idx-n-1]==1) nij++;
+			// nij=c[idx-ne-1]+c[idx-ne]+c[idx-ne+1]+c[idx-1]
+			// 	+c[idx+1]+c[idx+ne-1]+c[idx+ne]+c[idx+ne+1];
 
 			// Update cell status 
 			if(c[idx]==1){
-				if(nij>=6){cc[idx]=0;}
-				else{cc[idx]=1;}
+				if(nij>=1&&nij<=5){cc[idx]=1;}
+				else{cc[idx]=0;}
 			}
 			else if(nij==3){cc[idx]=1;}
 			else {cc[idx]=0;}

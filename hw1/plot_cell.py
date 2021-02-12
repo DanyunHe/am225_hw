@@ -1,8 +1,8 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
 
-data=np.fromfile("2.out",dtype='int32',count=-1,sep="")
-data=data.reshape((80,40))
+# data=np.fromfile("2.out",dtype='int32',count=-1,sep="")
+# data=data.reshape((80,40))
 
 fig,ax=plt.subplots(2,4,figsize=(10,7))
 for i in range(7):

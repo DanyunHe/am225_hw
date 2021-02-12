@@ -1,32 +1,11 @@
 #include <cmath>
 #include <cstdio>
-
-void SudokuSolve(int i,int* b){
-	if(i==81){
-		puts("sudoku complete!")
-		for(int k=0;k<81;k++){
-			printf("k %d, b[k] %d\n",k,b[k]);
-		}
-		return;
-	}
-	else{
-		if(b[i]==0){
-			for(int j=1;j<10;j++){
-				if(valid(j,i,b)){
-					b[i]=j;
-					SudokuSolve(i+1);
-					b[i]=0;
-				}
-			}
-		}
-		else{
-			SudokuSolve(i+1);
-		}
-	}
-}
+#include <cstring>
+#include <iostream>
+#include "omp.h"
 
 // Check if x, the grid value at y, is a valid value to fill in board b
-Boolean valid(int x,int y,int* b){
+bool valid(int x,int y,int* b){
 
 	// Get the row and column index (ii,jj)
 	int ii=y/9;
@@ -44,17 +23,67 @@ Boolean valid(int x,int y,int* b){
 
 	// Check block
 	// Get the index of the first grid in the block
-	int ic=ii/3;
-	int jc=jj/3;
+	int ic=ii-ii%3;
+	int jc=jj-jj%3;
 	for(int i=0;i<3;i++){
 		for(int j=0;j<3;j++){
-			idx=(ic+i)*9+jc+j
+			int idx=(ic+i)*9+jc+j;
 			if(b[idx]==x && idx!=y) return false;
 		}
 	}
 
 	return true;
 
+}
+
+
+// Show the sudoku board
+void print_board(int* b){
+	for(int i=0;i<9;i++){
+		for(int j=0;j<8;j++){
+			printf("%d|",b[i*9+j]);
+		}
+		printf("%d\n",b[i*9+8]);
+	}
+}
+
+
+
+unsigned long int SudokuSolve(int i,int* b){
+	if(i==81){
+		// puts("sudoku complete!");
+		// print_board(b);
+		return 1;
+	}
+	else if(b[i]!=0){
+		return SudokuSolve(i+1,b);
+	}
+	else{
+		unsigned long int total_sol=0;
+
+	// Multithread searching 
+	#pragma omp parallel
+	{ 
+		
+		int* board=new int[81];
+		memcpy(board,b,81*sizeof(int));
+
+	#pragma omp for schedule(dynamic) reduction(+:total_sol)
+		for(int j=1;j<10;j++){
+			if(valid(j,i,board)){
+				board[i]=j;
+				total_sol+=SudokuSolve(i+1,board);
+			}
+		}
+		board[i]=0;
+		memcpy(b,board,81*sizeof(int));
+		delete [] board;
+		// return total_sol;
+	}
+	// if(total_sol>100000) printf("number of solutions for fig 1c %lu\n",total_sol);
+	return total_sol;
+	}
+	
 }
 
 // Initialize board in figure 1a
@@ -92,7 +121,7 @@ void board2(int* b){
 }
 
 // Initialize board in figure 1c
-void board2(int* b){
+void board3(int* b){
 
 	// indexing b[i,j]=b[i*9+j]
 	for(int i=0;i<81;i++){b[i]=0;}
@@ -111,9 +140,37 @@ void board2(int* b){
 
 int main(){
 
-	int b1[81];
-	board1(b1);
-	SudokuSolve(0,b1);
 
+	int b[81];
+	int result;
+	double t0,t1;
+	// 4a
+	int nrepeat=1;
+	t0=omp_get_wtime();
+	for(int i=0;i<nrepeat;i++){
+		board1(b);
+	// print_board(b1);
+		result=SudokuSolve(0,b);
+
+	}
+	t1=omp_get_wtime();
+	printf("time to solve a is %f\n",(t1-t0)/nrepeat);
+	
+	// // 4b
+	t0=omp_get_wtime();
+	board2(b);
+	result=SudokuSolve(0,b);
+	t1=omp_get_wtime();
+	printf("number of solutions for fig 1b %d, time %f\n",result,t1-t0);
+
+	// 4c
+	t0=omp_get_wtime();
+	board3(b);
+	unsigned long int count=SudokuSolve(0,b);
+	t1=omp_get_wtime();
+	// std::cout<<"board c"<<std::dec<<count<<std::endl;
+	printf("number of solutions for fig 1c %#lu, time %f\n",count,t1-t0);
+	// printf("number of solutions for fig 1c %#lu, time %f\n",count,t1-t0);
+	// printf("number of solutions for fig 1c %#lx, time %f\n",count,t1-t0);
 
 }

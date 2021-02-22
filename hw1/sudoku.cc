@@ -138,6 +138,15 @@ void board3(int* b){
 
 }
 
+
+// Initialize board in figure 1c
+void board4(int* b){
+
+	// indexing b[i,j]=b[i*9+j]
+	for(int i=0;i<81;i++){b[i]=0;}
+
+}
+
 int main(){
 
 
@@ -149,7 +158,6 @@ int main(){
 	t0=omp_get_wtime();
 	for(int i=0;i<nrepeat;i++){
 		board1(b);
-	// print_board(b1);
 		result=SudokuSolve(0,b);
 
 	}
@@ -157,6 +165,7 @@ int main(){
 	printf("time to solve a is %f\n",(t1-t0)/nrepeat);
 	
 	// // 4b
+	
 	t0=omp_get_wtime();
 	board2(b);
 	result=SudokuSolve(0,b);
@@ -166,11 +175,20 @@ int main(){
 	// 4c
 	t0=omp_get_wtime();
 	board3(b);
-	unsigned long int count=SudokuSolve(0,b);
+	// unsigned long int count=SudokuSolve(0,b);
+	t1=omp_get_wtime();
+	// std::cout<<"board c"<<std::dec<<count<<std::endl;
+	// printf("number of solutions for fig 1c %#lu, time %f\n",count,t1-t0);
+	// printf("number of solutions for fig 1c %#lu, time %f\n",count,t1-t0);
+	// printf("number of solutions for fig 1c %#lx, time %f\n",count,t1-t0);
+
+	// 4c
+	t0=omp_get_wtime();
+	board4(b);
+	unsigned long count=SudokuSolve(0,b);
 	t1=omp_get_wtime();
 	// std::cout<<"board c"<<std::dec<<count<<std::endl;
 	printf("number of solutions for fig 1c %#lu, time %f\n",count,t1-t0);
-	// printf("number of solutions for fig 1c %#lu, time %f\n",count,t1-t0);
-	// printf("number of solutions for fig 1c %#lx, time %f\n",count,t1-t0);
+	
 
 }

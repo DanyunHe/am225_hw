@@ -4,23 +4,30 @@
 #include <cstdio>
 
 
-combinations::combinations(int nn_): count(0),all_comb(new int[nn_]){}
+combinations::combinations(int nn_): nn(nn_),count(0),all_comb(new int[nn_]){}
 
 combinations::~combinations(){
 	delete [] all_comb;
 }
 
+void combinations::reset(){
+	for(int i=0;i<nn;i++){
+		all_comb[i]=0;
+	}
+	count=0;
+}
+
 void combinations::helper(int* x,int r,int a, int b,int idx){
 	// printf("a %d b %d idx %d r %d x %d\n",a,b,idx,r,x[0]);
 	if(idx==r){
-		count++;
 		// puts("c");
 		for(int i=0;i<r;i++){
 			// Copy x to the set of combinations
 			all_comb[i+r*count]=x[i];
 			// printf("i %d x[i] %d size %d\n",i,x[i],count);
 		}
-		return;
+		count++;
+		// return;
 	}
 	else if(a<=b){
 		// puts("b");
@@ -30,7 +37,7 @@ void combinations::helper(int* x,int r,int a, int b,int idx){
 		helper(x,r,a+1,b,idx);
 
 	}
-	return;
+	// return;
 }
 
 // Return number of combinations 

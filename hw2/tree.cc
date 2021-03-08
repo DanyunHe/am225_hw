@@ -61,6 +61,14 @@ int count_tree(int p){
 			all_n[k-1]=nt;
 			int total_tree=0;
 			if(isvalid(all_n,k)){
+				if(p==7){
+					printf("k %d p %d\n",k,p);
+					for(int i=0;i<k;i++){
+						// total_tree*=count_tree(all_n[i]);
+						printf("n[%d] %d\n",i,all_n[i]);
+					}
+
+				}
 				total_tree=1;
 				for(int i=0;i<k;i++){
 					total_tree*=count_tree(all_n[i]);
@@ -78,7 +86,7 @@ int count_tree(int p){
 }
 
 int main(){
-	for(int p=1;p<10;p++){
+	for(int p=1;p<8;p++){
 		int sol=count_tree(p);
 		printf("order %d has trees %d \n",p,sol);
 

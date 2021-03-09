@@ -16,8 +16,8 @@ class fasl {
         ~fasl();
         void print(double t_,double *in);
         void dense_output(double theta,double dt);
-        void solve_fixed(double t_end,int iters,bool output,int d_steps);
-        void step(double dt);
+        void solve(double t_end,int iters,bool output,int d_steps);
+        int step(double dt);
         virtual void init();
         virtual void ff(double t_,double *in,double *out);
     private:

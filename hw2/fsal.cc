@@ -40,8 +40,8 @@ void fsal::solve(){
 
     ff(t,q,k1);
     for(int i=0;i<steps;i++) {
-    	dt=step_size();
-        step(dt);
+        
+        dt=step(dt);
 
         // Do any dense output interpolation
         if(d_steps>0) {
@@ -54,7 +54,7 @@ void fsal::solve(){
 
         // Move the required data for the next step into position
         memcpy(q,dq,dof*sizeof(double));
-        memcpy(k1,k2,dof*sizeof(double));
+        memcpy(k1,k5,dof*sizeof(double));
 
         if(output) print(t,q);
     }
@@ -78,7 +78,7 @@ void fsal::dense_output(double theta,double dt) {
 }
 
 /** Step forward for a given step size dt. */
-void fsal::step(double dt){
+int fsal::step(double dt){
 
 	// Second step
     for(int i=0;i<dof;i++) dq[i]=q[i]+dt*k1[i]/3.;
@@ -93,15 +93,22 @@ void fsal::step(double dt){
     ff(t+dt,dq,k4);
 
 	// Fifth step 
-	t+=dt;fcount+=4;
+	fcount+=4;
 	for(int i=0;i<dof;i++) dq[i]=q[i]+dt*(k1[i]+3.*k2[i]+3.*k3[i]+k4[i])/8.;
     ff(t+dt,dq,k5);
 
+    // Find adaptive step 
+    while(true){
+
+    }
+    
+
     // Complete solution
+    t+=dt;
     for(int i=0;i<dof;i++) dq[i]=q[i]+dt*(1/12.)*(k1[i]+6*k2[i]+3*k3[i]+2*k5[i]);
 
     // Reuse k2 to store the derivative at the new solution
-    ff(t,dq,k2);
+    // ff(t,dq,k2);
 
 }
 

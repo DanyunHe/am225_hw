@@ -2,9 +2,9 @@
 include ../config.mk
 
 # Lists of executables
-objs=combinations.o
+objs=combinations.o fsal.o
 src=$(patsubst %.o,%.cc,$(objs) $(mg_objs))
-execs=tree
+execs=tree fsal_test
 all: $(execs)
 
 # A Makefile target to refresh the dependency file
@@ -21,6 +21,9 @@ clean:
 # be built and $^ is a shorthand for all the dependencies. (Can also use $< to
 # mean the first dependency only.)
 tree: tree.cc $(objs)
+	$(cxx) $(cflags) -o $@ $^
+
+fsal_test: fsal_test.cc %(objs)
 	$(cxx) $(cflags) -o $@ $^
 
 # combinations: combinations.cc

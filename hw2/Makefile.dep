@@ -1,1 +1,2 @@
 combinations.o: combinations.cc combinations.hh
+fsal.o: fsal.cc fsal.hh

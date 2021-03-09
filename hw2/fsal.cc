@@ -27,7 +27,8 @@ fsal::~fsal(){
 /** Print the solution at given state. */
 void fsal::print(double t_,double *in){
 	printf("%g",t_);
-	for(int i=0;i<dof;i++) printf("%g",in[i]);
+	for(int i=0;i<dof;i++) printf(" %g",in[i]);
+    puts("");
 }
 /** Solve ODE system with adaptive step.
  * \param[in] T the duration.
@@ -75,6 +76,7 @@ void fsal::solve(double T,double lambda,int n,int dn,bool output){
         memcpy(k1,k5,dof*sizeof(double));
 
         if(output) print(t,q);
+        
     }
 
 }
@@ -96,7 +98,7 @@ void fsal::dense_output(double theta,double dt) {
 }
 
 /** Step forward for a given step size dt. */
-int fsal::step(double dt,double lambda,bool last){
+double fsal::step(double dt,double lambda,bool last){
 
 	// Second step
     for(int i=0;i<dof;i++) dq[i]=q[i]+dt*k1[i]/3.;

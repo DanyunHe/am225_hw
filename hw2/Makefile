@@ -2,10 +2,13 @@
 include ../config.mk
 
 # Lists of executables
-objs=combinations.o fsal.o
+objs=combinations.o fsal.o sol_rk4d.o
 src=$(patsubst %.o,%.cc,$(objs) $(mg_objs))
-execs=tree fsal_test
+execs=tree fsal_test fsal_osc
 all: $(execs)
+
+# Include the file dependencies
+-include Makefile.dep
 
 # A Makefile target to refresh the dependency file
 depend:
@@ -24,6 +27,9 @@ tree: tree.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^
 
 fsal_test: fsal_test.cc $(objs)
+	$(cxx) $(cflags) -o $@ $^
+
+fsal_osc: fsal_osc.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^
 
 # combinations: combinations.cc

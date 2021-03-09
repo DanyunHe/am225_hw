@@ -16,6 +16,11 @@ bool isvalid(int* nt,int k){
 	return true;
 }
 
+int factorial(int n){
+	if(n==1) return 1;
+	return n*factorial(n-1);
+}
+
 /** Count all trees of order p. */
 int count_tree(int p){
 	if(p==1){
@@ -62,19 +67,46 @@ int count_tree(int p){
 			int total_tree=0;
 			if(isvalid(all_n,k)){
 				if(p==7){
-					printf("k %d p %d\n",k,p);
-					for(int i=0;i<k;i++){
-						// total_tree*=count_tree(all_n[i]);
-						printf("n[%d] %d\n",i,all_n[i]);
+					// printf("k %d p %d\n",k,p);
+					for(int id=0;id<k;id++){
+						// printf("n[%d] %d\n",id,all_n[id]);
 					}
 
 				}
 				total_tree=1;
-				for(int i=0;i<k;i++){
-					total_tree*=count_tree(all_n[i]);
+
+				// Check if there is identical ni, then perform combination with repitation
+				int ri=1,ni=all_n[0],num_tree;
+				for(int id=0;id<k-1;id++){
+					if(all_n[id]<3||all_n[id+1]!=ni){
+						if(ri>1){
+							// puts("a");
+							num_tree=count_tree(ni);
+							//perform combination with repitation
+							total_tree*=(factorial(ri+num_tree-1)/(factorial(ri)*factorial(num_tree-1)));
+							ri=1;
+						}
+						ni=all_n[id+1];
+						total_tree*=count_tree(all_n[id]);
+						
+					}
+					else{
+						ri++;
+						ni=all_n[id+1];
+						// printf("ri %d ni %d\n",ri,ni);
+					}
 				}
+				if(ri>1){
+					// puts("b");
+					num_tree=count_tree(ni);
+					total_tree*=(factorial(ri+num_tree-1)/(factorial(ri)*factorial(num_tree-1)));
+				}
+				else{
+					total_tree*=count_tree(all_n[k-1]);
+				}
+				// if(p==7) printf("k %d total_tree %d\n",k,total_tree);
 			}
-			// printf("i %d nt %d\n",i,nt);
+			// printf("i %d nt %d total_tree %d\n",i,nt,total_tree);
 			// total_tree*=count_tree(nt);
 			count+=total_tree;
 
@@ -86,7 +118,7 @@ int count_tree(int p){
 }
 
 int main(){
-	for(int p=1;p<8;p++){
+	for(int p=1;p<11;p++){
 		int sol=count_tree(p);
 		printf("order %d has trees %d \n",p,sol);
 

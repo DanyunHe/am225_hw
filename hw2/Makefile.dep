@@ -1,2 +1,3 @@
 combinations.o: combinations.cc combinations.hh
-fsal.o: fsal.cc fsal.hh bruss.hh
+fsal.o: fsal.cc fsal.hh
+sol_rk4d.o: sol_rk4d.cc sol_rk4d.hh

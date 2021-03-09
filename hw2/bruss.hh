@@ -1,6 +1,7 @@
 #ifndef BRUSS_HH
 #define BRUSS_HH
 
+#include "sol_rk4d.hh"
 #include "fsal.hh"
 
 /** This class has functions to specify the test Brusselator problem. */
@@ -21,6 +22,16 @@ class bruss {
             *q=1.5;
             q[1]=3.;
         }
+};
+
+class brus_rk4d : public rk4d, public bruss{
+    public:
+        brus_rk4d() : rk4d(2) {}
+        ~brus_rk4d() {}
+        virtual void ff(double t_,double *in,double *out) {
+            brus_ff(t_,in,out);
+        }
+        virtual void init() {brus_init(q);}
 };
 
 

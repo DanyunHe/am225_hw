@@ -23,7 +23,7 @@ clean:
 tree: tree.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^
 
-fsal_test: fsal_test.cc %(objs)
+fsal_test: fsal_test.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^
 
 # combinations: combinations.cc

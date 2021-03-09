@@ -6,7 +6,7 @@
 #include "combinations.hh"
 using namespace std;
 
-
+// Make sure the numbers in the array nt is increasing 
 bool isvalid(int* nt,int k){
 	for(int i=0;i<k-1;i++){
 		if(nt[i]>nt[i+1]){
@@ -16,9 +16,26 @@ bool isvalid(int* nt,int k){
 	return true;
 }
 
+// Compute factorial function n!
 int factorial(int n){
 	if(n==1) return 1;
 	return n*factorial(n-1);
+}
+
+// Compute combination function Cn^r
+int Cnr(int n, int r){
+	if(r>n){
+		printf("invalid n %d and r %d\n",n,r);
+		return -1;
+	}
+	else if(r==n){
+		return 1;
+	}
+	if(n==1) return 1;
+	if(r==1) return n;
+
+	return Cnr(n-1,r)+Cnr(n-1,r-1);
+
 }
 
 /** Count all trees of order p. */
@@ -34,17 +51,17 @@ int count_tree(int p){
 	// when k=1
 	count+=count_tree(p-1);
 	int num_com;
-	combinations comb(1000);
+	combinations comb(10000000);
 	// combinations comb(1000);
 
 	// Consider edges number from 2 to p-1
 	for(int k=2;k<p;k++){
 		// puts("1");
-		// printf("n %d r %d\n",p-2,k-1);
+		// if(k==p-1) printf("n %d r %d\n",p-2,k-1);
 		// combinations comb(1000);
 		comb.reset();
 		num_com=comb.find_combination(p-2,k-1);
-		// printf("num %d\n",num_com);
+		// if(p==15) printf("edge %d num %d\n",k,num_com);
 		// puts("2");
 		// for(int i=0;i<num_com*(k-1);i++) printf("i %d com %d\n",i,comb.all_comb[i]);
 
@@ -83,7 +100,8 @@ int count_tree(int p){
 							// puts("a");
 							num_tree=count_tree(ni);
 							//perform combination with repitation
-							total_tree*=(factorial(ri+num_tree-1)/(factorial(ri)*factorial(num_tree-1)));
+							// total_tree*=(factorial(ri+num_tree-1)/(factorial(ri)*factorial(num_tree-1)));
+							total_tree*=Cnr(ri+num_tree-1,ri);
 							ri=1;
 						}
 						ni=all_n[id+1];
@@ -99,16 +117,18 @@ int count_tree(int p){
 				if(ri>1){
 					// puts("b");
 					num_tree=count_tree(ni);
-					total_tree*=(factorial(ri+num_tree-1)/(factorial(ri)*factorial(num_tree-1)));
+					// total_tree*=(factorial(ri+num_tree-1)/(factorial(ri)*factorial(num_tree-1)));
+					total_tree*=Cnr(ri+num_tree-1,ri);
 				}
 				else{
 					total_tree*=count_tree(all_n[k-1]);
 				}
 				// if(p==7) printf("k %d total_tree %d\n",k,total_tree);
 			}
-			// printf("i %d nt %d total_tree %d\n",i,nt,total_tree);
+			// if(p==15) printf("count %d total_tree %d\n",count,total_tree);
 			// total_tree*=count_tree(nt);
 			count+=total_tree;
+
 
 		}
 
@@ -118,11 +138,14 @@ int count_tree(int p){
 }
 
 int main(){
-	for(int p=1;p<11;p++){
+	for(int p=1;p<16;p++){
 		int sol=count_tree(p);
 		printf("order %d has trees %d \n",p,sol);
 
 	}
+
+	// int result=Cnr(10,3);
+	// printf("c(10,3) %d",result);
 	
 
 }

@@ -13,11 +13,14 @@ class fsal {
         double fac;
         double facmax;
         double facmin;
+        double atol;
+        double rtol;
 
         /** The solution vector. */
         double *q;
         fsal(int dof_);
         virtual ~fsal();
+        double absolute(double x);
         void print(double t_,double *in);
         void dense_output(double theta,double dt);
         void solve(double T,double lambda,int n,int dn,bool output);

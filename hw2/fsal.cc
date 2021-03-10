@@ -6,7 +6,7 @@
 /** Initialized the fsal solver.
  * \param[in] dof_ the number of degree of freedoms. */
 fsal::fsal(int dof_):dof(dof_),fcount(0),t(0.),
-    fac(0.9),facmax(3.),facmin(1./3),
+    fac(0.9),facmax(3.),facmin(1./3.),atol(0.),rtol(0.),
     q(new double[dof]),dq(new double[dof]),
 	k1(new double[dof]),k2(new double[dof]),
     k3(new double[dof]),k4(new double[dof]),k5(new double[dof]){}
@@ -29,6 +29,11 @@ void fsal::print(double t_,double *in){
 	printf("%g",t_);
 	for(int i=0;i<dof;i++) printf(" %g",in[i]);
     puts("");
+}
+
+double fsal::absolute(double x){
+    if(x>=0) return x;
+    else return -x;
 }
 /** Solve ODE system with adaptive step.
  * \param[in] T the duration.
@@ -53,6 +58,7 @@ void fsal::solve(double T,double lambda,int n,int dn,bool output){
     bool last=false;
     while(t<T){
         // Check if it is the last step
+        double old_T = t;
         if(t<T-dt){
             dt=step(dt,lambda,last);
         }
@@ -62,11 +68,13 @@ void fsal::solve(double T,double lambda,int n,int dn,bool output){
             dt=step(dt,lambda,last);
         }
 
+        double dt_taken = t - old_T;
+
         // Do any dense output interpolation
         if(dn>0) {
             while(t_den+dt_den<t) {
                 t_den+=dt_den;
-                dense_output(1.+(t_den-t)/dt,dt);
+                dense_output(1.+(t_den-t)/dt_taken,dt_taken);
                 print(t_den,k3);
             }
         }
@@ -121,16 +129,19 @@ double fsal::step(double dt,double lambda,bool last){
     // Compute error
     double err=0.,qq=3.;
     double yi,yhat,sc;
+    atol=lambda;
+    rtol=0;
     for(int i=0;i<dof;i++){
         yi=dt*(k1[i]+3.*k2[i]+3.*k3[i]+k4[i])/8.;
         yhat=dt*(1/12.)*(k1[i]+6*k2[i]+3*k3[i]+2*k5[i]);
-        sc=lambda+lambda*fmax(abs(q[i]),abs(q[i]+yi));
+        sc=atol+rtol*fmax(absolute(q[i]),absolute(q[i]+yi));
         err+=(yi-yhat)*(yi-yhat)/(sc*sc);
     }
-    err=sqrt(err/dof);
+    err=pow((err/dof),0.5);
+    
 
     // Compute an adaptive step size
-    while(err>1&&last!=1){
+    while(err>1&&!last){
         // reject
         dt=dt*fmin(facmax,fmax(facmin,fac*pow((1./err),1./(qq+1.))));
         err=0;
@@ -154,18 +165,20 @@ double fsal::step(double dt,double lambda,bool last){
         for(int i=0;i<dof;i++){
             yi=dt*(k1[i]+3.*k2[i]+3.*k3[i]+k4[i])/8.;
             yhat=dt*(1/12.)*(k1[i]+6*k2[i]+3*k3[i]+2*k5[i]);
-            sc=lambda+lambda*fmax(abs(q[i]),abs(q[i]+yi));
+            sc=atol+rtol*fmax(absolute(q[i]),absolute(q[i]+yi));
             err+=(yi-yhat)*(yi-yhat)/(sc*sc);
         }
-        err=sqrt(err/dof);
+        err=pow((err/dof),0.5);
 
     }
     
 
     // Complete solution
     t+=dt;
-    for(int i=0;i<dof;i++) dq[i]=q[i]+dt*(1/12.)*(k1[i]+6*k2[i]+3*k3[i]+2*k5[i]);
+    for(int i=0;i<dof;i++) dq[i]=q[i]+dt*(k1[i]+3.*k2[i]+3.*k3[i]+k4[i])/8.;
     dt=dt*fmin(facmax,fmax(facmin,fac*pow((1./err),1./(qq+1.))));
+
+    // printf("err %g dt %g lambda %g\n",err,dt,lambda);
 
     return dt;
 

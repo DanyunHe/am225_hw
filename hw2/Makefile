@@ -4,7 +4,7 @@ include ../config.mk
 # Lists of executables
 objs=combinations.o fsal.o sol_rk4d.o
 src=$(patsubst %.o,%.cc,$(objs) $(mg_objs))
-execs=tree fsal_test fsal_osc
+execs=tree fsal_test fsal_osc disc_test
 all: $(execs)
 
 # Include the file dependencies
@@ -30,6 +30,9 @@ fsal_test: fsal_test.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^
 
 fsal_osc: fsal_osc.cc $(objs)
+	$(cxx) $(cflags) -o $@ $^
+
+disc_test: disc_test.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^
 
 # combinations: combinations.cc

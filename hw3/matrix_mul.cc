@@ -19,8 +19,8 @@ void std_mul(int n,double* A, double* B, double* C){
 			C[j*n+i]=temp;
 		}
 	}
-}
 
+}
 
 /** Strassen's algorithm matrix matrix multiplication.
  *\ param[in] n matrix dimension.

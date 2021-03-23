@@ -104,8 +104,10 @@ int count_tree(int p){
 							total_tree*=Cnr(ri+num_tree-1,ri);
 							ri=1;
 						}
+						else{
+							total_tree*=count_tree(all_n[id]);
+						}
 						ni=all_n[id+1];
-						total_tree*=count_tree(all_n[id]);
 						
 					}
 					else{

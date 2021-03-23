@@ -33,9 +33,9 @@ void strassen_mul(int n, double* A,double* B,double* C){
 
 	// Construct submatrix
 	int nn=n/2;
-	int nn2=nn*nn;
-	double* A00=new double[nn2],A01=new double[nn2],A10=new double[nn2],A11=new double[nn2],\
-		 B00=new double[nn2],B01=new double[nn2],B10=new double[nn2],B11=new double[nn2];
+	const int nn2=nn*nn;
+	double *A00=new double[nn2],*A01=new double[nn2],*A10=new double[nn2],*A11=new double[nn2];
+	double *B00=new double[nn2],*B01=new double[nn2],*B10=new double[nn2],*B11=new double[nn2];
 	for(int i=0;i<n;i++){
 		for(int j=0;j<n;j++){
 			if(i<nn){
@@ -61,10 +61,10 @@ void strassen_mul(int n, double* A,double* B,double* C){
 	}
 
 	// Calculate Q
-	double* Q0=new double[nn2],Q1=new double[nn2],Q2=new double[nn2],Q3=new double[nn2],\
-		Q4=new double[nn2],Q5=new double[nn2],Q6=new double[nn2];
+	double *Q0=new double[nn2],*Q1=new double[nn2],*Q2=new double[nn2],*Q3=new double[nn2],\
+		*Q4=new double[nn2],*Q5=new double[nn2],*Q6=new double[nn2];
 
-	double* temp1=new double[nn2],temp2=new double[nn2];
+	double *temp1=new double[nn2],*temp2=new double[nn2];
 	
 	// Q0
 	for(int i=0;i<nn;i++){
@@ -160,7 +160,7 @@ void blas_mul(int n,double* A,double* B,double* C){
 	char trans='n';
 	double alpha=1.,beta=0.;
 
-	dgemm_(&trans,n,n,n,&alpha,A,&n,B,&n,&beta,C,&n);
+	dgemm_(&trans,&trans,&n,&n,&n,&alpha,A,&n,B,&n,&beta,C,&n);
 
 }
 

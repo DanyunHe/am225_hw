@@ -25,7 +25,7 @@ class rbf : public conj_grad {
         double* const rs;
         rbf(int n_,int type_);
         ~rbf();
-        void init_random();
+        void init_random(int mode);
         void eigenvalues();
         void solve_weights_lapack();
         void solve_weights_conj_grad(int bls=0,bool verbose=false);
@@ -34,6 +34,8 @@ class rbf : public conj_grad {
         virtual void mul_A(double *in,double *out);
         virtual void M_inv(double *in,double *out);
         void make_table();
+        int count_tk();
+        int count_pk();
         inline void set_length_scale(double lscale) {
             lsq=lscale*lscale;ilsq=1./lsq;
         }
@@ -46,6 +48,8 @@ class rbf : public conj_grad {
         void preconditioning_table(int bls_);
         void fill_matrix_entries(double *Ap,int k,int b);
         double phi(double rsq);
+        void hilbert_curve(double* px,double* py,double* q,int mode);
+        void rot(int n,int *x,int *y, int rx, int ry);
         /** The block size in the block Jacobi preconditioner. */
         int bls;
         /** The last block size in the block Jacobi preconditioner. */

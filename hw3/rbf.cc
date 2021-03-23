@@ -42,21 +42,97 @@ rbf::~rbf() {
 }
 
 /** Initializes the points to be randomly distributed in the square [-1,1]^2.
+ *\ param[in] mode type of initialization.
+ *\ mode=0: standard init
+ *\ mode=1: init with hilbert curve mapping 
  */
-void rbf::init_random() {
+void rbf::init_random(int mode) {
 
     // Create random positions and resort y positions
     for(int i=0;i<n;i++) {
         px[i]=urand();
         py[i]=urand();
     }
-    std::sort(py,py+n);
-
+    
     // Create function values
-    for(int i=0;i<n;i++) {
-        pf[i]=exp(-2*(px[i]*px[i]+py[i]*py[i]));
-        rs[i]=pf[i];
+    if(mode==0){
+        std::sort(py,py+n);
+        for(int i=0;i<n;i++) {
+            pf[i]=exp(-2*(px[i]*px[i]+py[i]*py[i]));
+            rs[i]=pf[i];
+        }
     }
+
+    if(mode==1){
+        double* q=new double[n];
+        hilbert_curve(px,py,q,0);
+        std::sort(q,q+n);
+        hilbert_curve(px,py,q,1);
+        for(int i=0;i<n;i++) {
+            pf[i]=exp(-2*(px[i]*px[i]+py[i]*py[i]));
+            rs[i]=pf[i];
+        }
+        delete [] q;
+    }
+}
+
+/** Bijectively map 1d to 2d. 
+ *\ param[in] [px,py] 2d values.
+ *\ param[in] q 1d
+ *\ param[in] mode 0: 2d to 1d, mode 1: 1d to 2d
+*/
+void rbf::hilbert_curve(double* px,double* py,double* q,int mode){
+    
+    if(mode==0){
+        // Convert [px,py] to q
+        int rx,ry,d=0;
+        for(int i=0;i<n;i++){
+            d=0;
+            int x=px[i],y=py[i];
+            for(int s=n/2;s>0;s/=2){
+                rx=(x&s)>0;
+                ry=(y&s)>0;
+                d+=s*s*((3*rx)^ry);
+                rot(n,&x,&y,rx,ry);
+            }
+            q[i]=d;
+        }
+
+    }
+
+    if(mode==1){
+        // Convert q to [px,py]
+        int rx,ry,t;
+        for(int i=0;i<n;i++){
+            t=q[i];
+            int x=0,y=0;
+            for(int s=1;s<n;s*=2){
+                rx=1&(t/2);
+                ry=1&(t^rx);
+                rot(s,&x,&y,rx,ry);
+                x+=s*rx;
+                y+=s*ry;
+                t/=4;
+            }
+            px[i]=x,py[i]=y;
+        }
+    }
+    
+}
+
+/** Rotate a quadrant. */
+void rbf::rot(int n,int *x,int *y, int rx, int ry){
+    if(ry==0){
+        if(ry==1){
+            *x=n-1-*x;
+            *y=n-1-*y;
+        }
+        int t=*x;
+        *x=*y;
+        *y=t;
+    }
+
+
 }
 
 /** Computes the weights in the RBF interpolant using the direct LAPACK solver. */
@@ -291,4 +367,26 @@ void rbf::eigenvalues() {
     // Print the eigenvalues
     for(int i=0;i<n;i++) printf("%g\n",evals[i]);
     delete [] evals;
+}
+
+/** Count the total non-zero matrix entries. */
+int rbf::count_tk(){
+    int count=0;
+    for(int i=0;i<n*n;i++){
+        if(A[i]!=0) count++;
+    }
+    return count;
+
+}
+
+/** Count the non-zero matrix entries in the Jacobi blocks. */
+int rbf::count_pk(){
+
+    int fb=n/bls;
+    int count=0;
+    for(int i=0;i<fb*bls*bls+lbls*lbls;i++){
+        if(Apre[i]!=0) count++;
+
+    }
+    return count;
 }

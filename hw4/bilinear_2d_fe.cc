@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <cmath>
 
 #include "bilinear_2d_fe.hh"
 #include "blas.h"
@@ -6,7 +7,13 @@
 
 /** Initializes the source function to be a constant. */
 void bilinear_2d_fe::init_const() {
-    for(int i=0;i<=n*n;i++) f[i]=1.;
+    for(int i=0;i<=n;i++){
+        for(int j=0;j<=n;j++){
+            double x=-1.+h*i,y=-1.+h*j;
+            double v=x*sqrt(1.-y*y/2.),w=y*sqrt(1.-x*x/2.);
+            f[j+(n+1)*i]=exp(-v)*(3+(v-4)*v+w*w);
+        }
+    } 
     assemble_b();
 }
 
@@ -52,17 +59,6 @@ void bilinear_2d_fe::print_matrix() {
 /** Performs multiplication on a vector by the stiffness matrix. */
 void bilinear_2d_fe::mul_A(double *in,double *out) {
     int i,j,k;
-
-    // Pre-computed integrals of derivatives of Lagrange polynomials, which are
-    // required to construct the stiffness matrix
-    const double B[16]={37/30.,-63/40.,9/20.,-13/120.,
-                        -63/40.,18/5.,-99/40.,9/20.,
-                        9/20.,-99/40.,18/5.,-63/40.,
-                        -13/120.,9/20.,-63/40.,37/30.},
-                 C[16]={17/40.,-51/80.,3/8.,-13/80.,
-                        -51/80.,27/8.,-297/80.,39/40.,
-                        3/8.,-297/80.,297/40.,-327/80.,
-                        -13/80.,39/40.,-327/80.,131/40.};
 
     // Set the output vector to initially be zero
     for(i=0;i<dof;i++) out[i]=0.;
@@ -131,13 +127,17 @@ void dx_p(int j, int k,double x, double y,double &dx,double &dy){
 }
 
 /** x,y in range [0,1]. */
-double f(double x, double y,int k,int j,int j2,int k2,int j3,int k3){
+double integrand(double x, double y,int k,int j,int j2,int k2,int j3,int k3){
     double* D=new double[4];
     cal_D(-1+h*(x+k),-1+h*(y+l),D);
     double dx2,dy2,dx3,dy3;
     dx_p(j2,k2,x,y,dx2,dy2);
     dx_p(j3,k3,x,y,dx3,dy3);
-    result=inv(D)*dx2*dy2*D*det(D);
+
+    det_D=D[0]*D[3]-D[1]*D[2];
+    inv(D);
+    result=(D[0]*dx2+D[2]*dy2)*(D[0]*dx3+D[2]*dy3)+(D[1]*dx2+D[3]*dy2)*(D[1]*dx3+D[3]*dy3);
+    result+=det_D;
     return result;
 
 }
@@ -150,10 +150,12 @@ double quadracture_calc(int k,int j,int j2,int k2,int x3,int y3,int j3,int k3){
 
     // Perform the 2D sum of function evaluations, each multiplied by the
     // corresponding weight
+
+    // this from -1 to 1? adjust to 0 to 1
     I=0.;
     for(int b=0;b<np;b++) {
         Ir=0.;
-        for(int a=0;a<np;a++) Ir+=q.w[a]*f(q.x[a],q.x[b],k,j,j2,k2,j3,k3);
+        for(int a=0;a<np;a++) Ir+=q.w[a]*integrand(q.x[a],q.x[b],k,j,j2,k2,j3,k3);
         I+=Ir*q.w[b];
     }
     return I;
@@ -165,37 +167,42 @@ double quadracture_calc(int k,int j,int j2,int k2,int x3,int y3,int j3,int k3){
 void bilinear_2d_fe::assemble_b() {
     int i,j,k;
 
-    // Pre-computed integrals of Lagrange polynomial products
-    const double D[16]={8/35.,99/560.,-9/140.,19/560.,
-                        99/560.,81/70.,-81/560.,-9/140.,
-                        -9/140.,-81/560.,81/70.,99/560.,
-                        19/560.,-9/140.,99/560.,8/35.};
+    // Set the output vector to initially be zero
+    for(i=0;i<dof+4*n;i++) b[i]=0.;
 
-    // Clear the source function
-    for(i=0;i<3*n;i++) b[i]=0.;
+    // Loop over the square elements
+    for(k=0;k<n;k++) for(int j=0;j<n;j++) {
 
-    // Loop over each interval. Here k=3q as defined in the notes.
-    for(k=0;k<3*n;k+=3) {
+        int jlo=j==0?1:0,jhi=j==n-1?0:1,
+            klo=k==0?1:0,kji==hi=k==n-1?0:1,
+            j2,k2,j3,k3;
 
-        // Loop over different basis functions in this interval. Here
-        // i is alpha and j is beta as defined in the notes. Usually i and j
-        // run from 0 to 3, but for the first interval i only runs from 1 to 3
-        // because of the essential boundary condition.
-        for(i=(k==0?1:0);i<4;i++) for(j=0;j<4;j++) {
+        // Loop over different basis functions in this interval. Here i is
+        // alpha, and j is beta as defined in the notes. Usually i and j run
+        // from 0 to 3. For the first interval when k=0, the first basis
+        // function is not included because it is not present due to the
+        // essential boundary condition. Hence i and j run from 1 to 3 in that
+        // case.
+        double result;
+        for(k2=0;k2<=1;k2++) for(j2=0;j2<=1;j2++){
+            for(k3=klo;k3<=khi;k3++) for(j3=jlo;j3<=jhi;j3++){
+                
 
-            // Add a contribution to the source vector from the two basis
-            // functions. The -1 shift is included when indexing b since the
-            // solution at x_0=1 is not part of the vector. However, f does
-            // contain a term at x_0=1, and thus there is no shift applied
-            // there.
-            b[-1+k+i]+=D[i+4*j]*f[k+j];
+                // Store into location (j+j2-1,k+k2-1)
+                ind2=(j+j2-1)+(n-1)*(k+k2-1);
+                ind3=(j+j3-1)+(n-1)*(k+k3-1);
+
+                // TO DO
+                out[ind3]+=result*f[ind2];
+
+            }
+
         }
     }
-
     // Normalize the results, and add in the Neumann condition to the last
     // entry
-    for(i=0;i<3*n;i++) b[i]*=h;
-    b[3*n-1]+=2*g;
+    for(i=0;i<dof+4*n;i++) b[i]*=h;
+    //b[3*n-1]+=2*g;
 }
 
 /** Prints the solution.

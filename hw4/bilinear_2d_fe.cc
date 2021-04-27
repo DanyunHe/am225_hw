@@ -6,42 +6,27 @@
 #include "quadrat.hh"
 
 /** Initializes the source function to be a constant. */
-void bilinear_2d_fe::init_const() {
+void bilinear_2d_fe::init() {
     for(int i=0;i<=n;i++){
         for(int j=0;j<=n;j++){
-            double x=-1.+h*i,y=-1.+h*j;
-            double v=x*sqrt(1.-y*y/2.),w=y*sqrt(1.-x*x/2.);
+            double xx=-1.+h*i,yy=-1.+h*j;
+            double v=xx*sqrt(1.-yy*yy/2.),w=yy*sqrt(1.-xx*xx/2.);
             f[j+(n+1)*i]=exp(-v)*(3+(v-4)*v+w*w);
         }
     } 
     assemble_b();
 }
 
-/** Initializes the source function to be a linear slope, f(x)=1.5-x. */
-void bilinear_2d_fe::init_slope() {
-    double xx=1;
-    for(int i=0;i<=3*n;i++,xx+=h) f[i]=xx-1.5;
-    assemble_b();
-}
-
-/** Initializes the source function so that the solution will match
- * a manufactured solution, u(x)=exp(1-x)*sin(5*pi*x). */
-void bilinear_2d_fe::init_mms() {
-    const double o=5*M_PI;
-    double xx=1;
-    for(int i=0;i<=3*n;i++,xx+=h) f[i]=-exp(1-xx)*(o*(1-2*xx)*cos(o*xx)+((1-o*o)*xx-1)*sin(o*xx));
-    assemble_b();
-}
 
 /** Prints the stiffness matrix as a text array. */
 void bilinear_2d_fe::print_matrix() {
     int i,j;
 
     // Allocate zero vector, and workspace to compute a matrix product
-    double *r=new double[6*n],*s=r+3*n;
-    for(i=0;i<3*n;i++) r[i]=0.;
+    double *r=new double[2*dof],*s=r+dof;
+    for(i=0;i<dof;i++) r[i]=0.;
 
-    for(int i=0;i<3*n;i++) {
+    for(int i=0;i<dof;i++) {
 
         // Apply the black box matrix multiplication routine to a unit vector,
         // in order to extract a column of matrix entries
@@ -50,8 +35,8 @@ void bilinear_2d_fe::print_matrix() {
         // Print a row of matrix entries. This assumes the matrix is symmetric
         // (as required for conjugate gradient) so that the row<->column switch
         // is permissible.
-        for(j=0;j<3*n-1;j++) printf("%g ",s[j]);
-        printf("%g\n",s[3*n-1]);
+        for(j=0;j<dof-1;j++) printf("%g ",s[j]);
+        printf("%g\n",s[dof-1]);
     }
     delete [] r;
 }
@@ -67,7 +52,7 @@ void bilinear_2d_fe::mul_A(double *in,double *out) {
     for(k=0;k<n;k++) for(int j=0;j<n;j++) {
 
         int jlo=j==0?1:0,jhi=j==n-1?0:1,
-            klo=k==0?1:0,kji==hi=k==n-1?0:1,
+            klo=k==0?1:0,khi=k==n-1?0:1,
             j2,k2,j3,k3;
 
         // Loop over different basis functions in this interval. Here i is
@@ -77,13 +62,14 @@ void bilinear_2d_fe::mul_A(double *in,double *out) {
         // essential boundary condition. Hence i and j run from 1 to 3 in that
         // case.
         double result;
+        int ind2,ind3;
         for(k2=0;k2<=1;k2++) for(j2=0;j2<=1;j2++){
             for(k3=klo;k3<=khi;k3++) for(j3=jlo;j3<=jhi;j3++){
                 
                 // Compute contributaion for (j,k) square
                 // Using 1st bilinear func indexed with (j2,k2);
                 // Using 2nd bilinear func indexed with (j3,k3);
-                result=quadracture_calc(x2,y2,j2,k2,x3,y3,j3,k3);
+                result=quadracture_calc(k,j,j2,k2,j3,k3);
 
                 // Store into location (j+j2-1,k+k2-1)
                 ind2=(j+j2-1)+(n-1)*(k+k2-1);
@@ -96,53 +82,93 @@ void bilinear_2d_fe::mul_A(double *in,double *out) {
     }
 }
 
-void cal_D(double x,double y,double* D){
-    D[0]=sqrt(1.-y*y/2);
-    D[1]=-x*y/(2.*sqrt(1.-y*y/2.));
-    D[2]=-x*y/(2.*sqrt(1.-x*x/2.));
-    D[3]=sqrt(1.-x*x/2);
+void bilinear_2d_fe::cal_D(double xx,double yy,double* D){
+    D[0]=sqrt(1.-yy*yy/2);
+    D[1]=-xx*yy/(2.*sqrt(1.-yy*yy/2.));
+    D[2]=-xx*yy/(2.*sqrt(1.-xx*xx/2.));
+    D[3]=sqrt(1.-xx*xx/2);
 }
 
-void dx_p(int j, int k,double x, double y,double &dx,double &dy){
+/** Return the basis function index. */
+int bilinear_2d_fe::basis_func(int j,int k){
     if(j==0){
         if(k==0){
-            dx=-1+y;
-            dy=-1+x;
+            return 0;
         }
         else if(k==1){
-            dx=-y;
-            dy=1-x;
+            return 2;
         }
     }
     else if(k==0){
-        dx=1-y;
-        dy=-x;
+        return 1;
 
     }
     else{
-        dx=y;
-        dy=x;
+        return 3;
+    }
+
+}
+
+/** Return basis function values at (x,y) for function idx. */
+double bilinear_2d_fe::basis_func_val(int idx,double xx,double yy){
+    switch(idx){
+        case 0:
+            return (1-xx)*(1-yy);
+            break;
+        case 1:
+            return xx*(1-yy);
+            break;
+        case 2:
+            return (1-xx)*yy;
+            break;
+        case 3:
+            return xx*yy;
+            break;
+    }
+
+}
+
+/** Calculate partial derivative for phi_j,k at (x,y). */
+void bilinear_2d_fe::dx_p(int j, int k,double xx, double yy,double &dx,double &dy){
+    int func_idx=basis_func(j,k);
+    switch(func_idx){
+        case 0:
+            dx=-1+yy;
+            dy=-1+xx;
+            break;
+        case 1:
+            dx=1-yy;
+            dy=-xx;
+            break;
+        case 2:
+            dx=-yy;
+            dy=1-xx;
+            break;
+        case 3:
+            dx=yy;
+            dy=xx;
+            break;
     }
 
 }
 
 /** x,y in range [0,1]. */
-double integrand(double x, double y,int k,int j,int j2,int k2,int j3,int k3){
+double bilinear_2d_fe::integrand(double xx, double yy,int k,int j,int j2,int k2,int j3,int k3){
     double* D=new double[4];
-    cal_D(-1+h*(x+k),-1+h*(y+l),D);
+    cal_D(-1+h*(xx+k),-1+h*(yy+j),D);
     double dx2,dy2,dx3,dy3;
-    dx_p(j2,k2,x,y,dx2,dy2);
-    dx_p(j3,k3,x,y,dx3,dy3);
+    dx_p(j2,k2,xx,yy,dx2,dy2);
+    dx_p(j3,k3,xx,yy,dx3,dy3);
 
-    det_D=D[0]*D[3]-D[1]*D[2];
-    inv(D);
-    result=(D[0]*dx2+D[2]*dy2)*(D[0]*dx3+D[2]*dy3)+(D[1]*dx2+D[3]*dy2)*(D[1]*dx3+D[3]*dy3);
+    double det_D=D[0]*D[3]-D[1]*D[2];
+    // TO DO inv(D);
+    double result=(D[0]*dx2+D[2]*dy2)*(D[0]*dx3+D[2]*dy3)+(D[1]*dx2+D[3]*dy2)*(D[1]*dx3+D[3]*dy3);
     result+=det_D;
     return result;
 
 }
 
-double quadracture_calc(int k,int j,int j2,int k2,int x3,int y3,int j3,int k3){
+double bilinear_2d_fe::quadracture_calc(int k,int j,int j2,int k2,int j3,int k3){
     // Set up the quadrature points and weights
     int np=5;
     double I,Ir;
@@ -155,10 +181,51 @@ double quadracture_calc(int k,int j,int j2,int k2,int x3,int y3,int j3,int k3){
     I=0.;
     for(int b=0;b<np;b++) {
         Ir=0.;
-        for(int a=0;a<np;a++) Ir+=q.w[a]*integrand(q.x[a],q.x[b],k,j,j2,k2,j3,k3);
-        I+=Ir*q.w[b];
+        for(int a=0;a<np;a++){
+            Ir+=q.w[a]*0.5*integrand(q.x[a]*0.5+0.5,q.x[b]*0.5+0.5,k,j,j2,k2,j3,k3);
+        }
+        I+=Ir*q.w[b]*0.5;
     }
     return I;
+
+}
+
+
+
+/** Calculate integral value for assemble_b function. */
+double bilinear_2d_fe::quadracture_calc2(int k,int j,int j2,int k2,int j3,int k3){
+    // Set up the quadrature points and weights
+    int np=5;
+    double I,Ir;
+    quadrat q(np);
+
+    // Perform the 2D sum of function evaluations, each multiplied by the
+    // corresponding weight
+
+    // this from -1 to 1? adjust to 0 to 1
+    I=0.;
+    for(int b=0;b<np;b++) {
+        Ir=0.;
+        for(int a=0;a<np;a++){
+            Ir+=0.5*q.w[a]*integrand2(q.x[a]*0.5+0.5,q.x[b]*0.5+0.5,k,j,j2,k2,j3,k3);
+        }
+        I+=Ir*q.w[b]*0.5;
+    }
+    return I;
+
+}
+
+/** Calculate integrand for assemble_b function. */
+double bilinear_2d_fe::integrand2(double xx, double yy,int k,int j,int j2,int k2,int j3,int k3){
+    double* D=new double[4];
+    cal_D(-1+h*(xx+k),-1+h*(yy+j),D);
+    // Get basis function index
+    int p2=basis_func(j2,k2);
+    int p3=basis_func(j3,k3);
+
+    double det_D=D[0]*D[3]-D[1]*D[2];
+    double result=basis_func_val(p2,xx,yy)*basis_func_val(p3,xx,yy)*det_D;
+    return result;
 
 }
 
@@ -174,7 +241,7 @@ void bilinear_2d_fe::assemble_b() {
     for(k=0;k<n;k++) for(int j=0;j<n;j++) {
 
         int jlo=j==0?1:0,jhi=j==n-1?0:1,
-            klo=k==0?1:0,kji==hi=k==n-1?0:1,
+            klo=k==0?1:0,khi=k==n-1?0:1,
             j2,k2,j3,k3;
 
         // Loop over different basis functions in this interval. Here i is
@@ -184,16 +251,18 @@ void bilinear_2d_fe::assemble_b() {
         // essential boundary condition. Hence i and j run from 1 to 3 in that
         // case.
         double result;
+        int ind2,ind3;
         for(k2=0;k2<=1;k2++) for(j2=0;j2<=1;j2++){
             for(k3=klo;k3<=khi;k3++) for(j3=jlo;j3<=jhi;j3++){
                 
 
                 // Store into location (j+j2-1,k+k2-1)
                 ind2=(j+j2-1)+(n-1)*(k+k2-1);
-                ind3=(j+j3-1)+(n-1)*(k+k3-1);
+                ind3=j+j3+(n+1)*(k+k3);
 
                 // TO DO
-                out[ind3]+=result*f[ind2];
+                result=quadracture_calc2(k,j,j2,k2,j3,k3);
+                b[ind2]+=result*f[ind3];
 
             }
 
@@ -210,7 +279,7 @@ void bilinear_2d_fe::assemble_b() {
 void bilinear_2d_fe::print(FILE *fp) {
     double xx=1+h;
     fprintf(fp,"1 0 0 %g\n",*f);
-    for(int i=0;i<3*n;i++,xx+=h) fprintf(fp,"%g %g %g %g\n",xx,x[i],b[i],f[i+1]);
+    for(int i=0;i<dof;i++,xx+=h) fprintf(fp,"%g %g %g %g\n",xx,x[i],b[i],f[i+1]);
 }
 
 /** Prints the solution.
@@ -230,16 +299,22 @@ void bilinear_2d_fe::print(const char* filename) {
  * integral.
  * \return The L2 norm. */
 double bilinear_2d_fe::l2_norm_mms() {
-    double l2=0.,xx=1.;
-    for(int i=0;i<3*n-1;i++) {
+    double l2=0.,xx=-1.,yy=-1.,vv,ww;
+    for(int j=0;j<n;j++) {
         xx+=h;
-        l2+=mms_dsq(xx,x[i]);
+        vv=xx*sqrt(1.-yy*yy/2.);
+        for(int i=0;i<n;i++){
+            yy+=h;
+            ww=yy*sqrt(1.-xx*xx/2.);
+            l2+=mms_dsq(vv,ww,x[j+i*n]);
+        }
+        l2+=mms_dsq(vv,ww,x[j+j*n]);
     }
 
     // Add the contribution at the last point, including a factor of 1/2 due to
     // the trapezoid rule. Note that there is no contribution at x=1, since the
     // numerical solution is zero there, and hence matches the manufactured
     // solution perfectly.
-    l2+=0.5*mms_dsq(2.,x[3*n-1]);
-    return sqrt(h*l2);
+    l2+=0.5*mms_dsq(sqrt(1./2.),sqrt(1./2.),x[dof-1]);
+    return sqrt(h*h*l2);
 }

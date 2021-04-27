@@ -4,7 +4,7 @@ include ../config.mk
 # Lists of files to be built
 objs=conj_grad.o cubic_1d_fe.o quadrat.o bilinear_2d_fe.o
 src=$(patsubst %.o,%.cc,$(objs))
-execs=fe_1d_test fe_1d_conv q2d_test fe_2d_test
+execs=fe_1d_test fe_1d_conv q2d_test fe_2d_test fe_2d_conv
 
 all: $(execs)
 
@@ -32,6 +32,9 @@ q2d_test: q2d_test.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^ $(lp_lflags)
 
 fe_2d_test: fe_2d_test.cc $(objs)
+	$(cxx) $(cflags) -o $@ $^ $(lp_lflags)
+
+fe_2d_conv: fe_2d_conv.cc $(objs)
 	$(cxx) $(cflags) -o $@ $^ $(lp_lflags)
 
 .PHONY: clean depend

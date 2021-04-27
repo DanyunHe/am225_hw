@@ -20,7 +20,7 @@ class bilinear_2d_fe: public conj_grad {
         /** The Neumann condition to apply at x=2. */
         double g;
         bilinear_2d_fe(int n_) : conj_grad((n_-1)*(n_-1)),
-           n(n_),dof(n*n), f(new double[(n+1)*(n+1)]), h(2./n) {}
+           n(n_),dof((n-1)*(n-1)), f(new double[(n+1)*(n+1)]), h(2./n) {}
         virtual ~bilinear_2d_fe() {delete [] f;}
         void init();
         double l2_norm_mms();
@@ -31,7 +31,7 @@ class bilinear_2d_fe: public conj_grad {
         virtual void mul_A(double *in,double *out);
     private:
         inline double mms_dsq(double vv,double ww,double s) {
-            double del=exp(1-vv)*(3.+(vv-4.)*vv-ww*ww)-s;
+            double del=(1-vv*vv-ww*ww)*exp(-vv)-s;
             return del*del;
         }
         double quadracture_calc(double x2,double y2,double j2,double k2,double x3,double y3,double j3,double k3);

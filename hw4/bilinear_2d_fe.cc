@@ -11,7 +11,7 @@ void bilinear_2d_fe::init() {
         for(int j=0;j<=n;j++){
             double xx=-1.+h*i,yy=-1.+h*j;
             double v=xx*sqrt(1.-yy*yy/2.),w=yy*sqrt(1.-xx*xx/2.);
-            f[j+(n+1)*i]=exp(-v)*(3+(v-4)*v+w*w);
+            f[j+(n+1)*i]=exp(-v)*(3.+(v-4.)*v+w*w);
         }
     } 
     assemble_b();
@@ -63,17 +63,19 @@ void bilinear_2d_fe::mul_A(double *in,double *out) {
         // case.
         double result;
         int ind2,ind3;
-        for(k2=0;k2<=1;k2++) for(j2=0;j2<=1;j2++){
+        for(k2=klo;k2<=khi;k2++) for(j2=jlo;j2<=jhi;j2++){
             for(k3=klo;k3<=khi;k3++) for(j3=jlo;j3<=jhi;j3++){
                 
                 // Compute contributaion for (j,k) square
                 // Using 1st bilinear func indexed with (j2,k2);
                 // Using 2nd bilinear func indexed with (j3,k3);
-                result=quadracture_calc(k,j,j2,k2,j3,k3);
+                result=quadracture_calc(j,k,j2,k2,j3,k3);
+                // printf("result %g\n",result);
 
                 // Store into location (j+j2-1,k+k2-1)
                 ind2=(j+j2-1)+(n-1)*(k+k2-1);
                 ind3=(j+j3-1)+(n-1)*(k+k3-1);
+                // printf("ind3 %d ind2 %d\n",ind3,ind2);
                 out[ind3]+=result*in[ind2];
 
             }
@@ -109,7 +111,11 @@ int bilinear_2d_fe::basis_func(int j,int k){
 
 }
 
-/** Return basis function values at (x,y) for function idx. */
+/** Return basis function values at (x,y) for function idx.
+ * f0(x,y)=(1-x)*(1-y) at (0,0)
+ * f1(x,y)=x*(1-y) at (1,0)
+ * f2(x,y)=(1-x)*y at (0,1)
+ * f3(x,y)=x*y at (1,1) */
 double bilinear_2d_fe::basis_func_val(int idx,double xx,double yy){
     switch(idx){
         case 0:
@@ -152,23 +158,26 @@ void bilinear_2d_fe::dx_p(int j, int k,double xx, double yy,double &dx,double &d
 
 }
 
-/** x,y in range [0,1]. */
-double bilinear_2d_fe::integrand(double xx, double yy,int k,int j,int j2,int k2,int j3,int k3){
+/** Calculate integrand for x,y in range [0,1]. */
+double bilinear_2d_fe::integrand(double xx, double yy,int j,int k,int j2,int k2,int j3,int k3){
     double* D=new double[4];
-    cal_D(-1+h*(xx+k),-1+h*(yy+j),D);
+    cal_D(-1.+h*(xx+j),-1.+h*(yy+k),D);
     double dx2,dy2,dx3,dy3;
     dx_p(j2,k2,xx,yy,dx2,dy2);
     dx_p(j3,k3,xx,yy,dx3,dy3);
 
     double det_D=D[0]*D[3]-D[1]*D[2];
-    // TO DO inv(D);
-    double result=(D[0]*dx2+D[2]*dy2)*(D[0]*dx3+D[2]*dy3)+(D[1]*dx2+D[3]*dy2)*(D[1]*dx3+D[3]*dy3);
-    result+=det_D;
+    // Calculate inverse of D
+    double* inv_D=new double[4];
+    inv_D[0]=D[3]/det_D,inv_D[1]=-D[1]/det_D,inv_D[2]=-D[2]/det_D,inv_D[3]=D[0]/det_D;
+    double result=(inv_D[0]*dx2+inv_D[2]*dy2)*(inv_D[0]*dx3+inv_D[2]*dy3)+\
+        (inv_D[1]*dx2+inv_D[3]*dy2)*(inv_D[1]*dx3+inv_D[3]*dy3);
+    result*=det_D;
     return result;
 
 }
 
-double bilinear_2d_fe::quadracture_calc(int k,int j,int j2,int k2,int j3,int k3){
+double bilinear_2d_fe::quadracture_calc(int j,int k,int j2,int k2,int j3,int k3){
     // Set up the quadrature points and weights
     int np=5;
     double I,Ir;
@@ -179,12 +188,12 @@ double bilinear_2d_fe::quadracture_calc(int k,int j,int j2,int k2,int j3,int k3)
 
     // this from -1 to 1? adjust to 0 to 1
     I=0.;
-    for(int b=0;b<np;b++) {
+    for(int jj=0;jj<np;jj++) {
         Ir=0.;
-        for(int a=0;a<np;a++){
-            Ir+=q.w[a]*0.5*integrand(q.x[a]*0.5+0.5,q.x[b]*0.5+0.5,k,j,j2,k2,j3,k3);
+        for(int ii=0;ii<np;ii++){
+            Ir+=q.w[ii]*0.5*integrand(q.x[ii]*0.5+0.5,q.x[jj]*0.5+0.5,j,k,j2,k2,j3,k3);
         }
-        I+=Ir*q.w[b]*0.5;
+        I+=Ir*q.w[jj]*0.5;
     }
     return I;
 
@@ -204,12 +213,12 @@ double bilinear_2d_fe::quadracture_calc2(int k,int j,int j2,int k2,int j3,int k3
 
     // this from -1 to 1? adjust to 0 to 1
     I=0.;
-    for(int b=0;b<np;b++) {
+    for(int jj=0;jj<np;jj++) {
         Ir=0.;
-        for(int a=0;a<np;a++){
-            Ir+=0.5*q.w[a]*integrand2(q.x[a]*0.5+0.5,q.x[b]*0.5+0.5,k,j,j2,k2,j3,k3);
+        for(int ii=0;ii<np;ii++){
+            Ir+=0.5*q.w[ii]*integrand2(q.x[ii]*0.5+0.5,q.x[jj]*0.5+0.5,k,j,j2,k2,j3,k3);
         }
-        I+=Ir*q.w[b]*0.5;
+        I+=Ir*q.w[jj]*0.5;
     }
     return I;
 
@@ -235,7 +244,7 @@ void bilinear_2d_fe::assemble_b() {
     int i,j,k;
 
     // Set the output vector to initially be zero
-    for(i=0;i<dof+4*n;i++) b[i]=0.;
+    for(i=0;i<dof;i++) b[i]=0.;
 
     // Loop over the square elements
     for(k=0;k<n;k++) for(int j=0;j<n;j++) {
@@ -252,17 +261,17 @@ void bilinear_2d_fe::assemble_b() {
         // case.
         double result;
         int ind2,ind3;
-        for(k2=0;k2<=1;k2++) for(j2=0;j2<=1;j2++){
-            for(k3=klo;k3<=khi;k3++) for(j3=jlo;j3<=jhi;j3++){
+        for(k2=klo;k2<=khi;k2++) for(j2=jlo;j2<=jhi;j2++){
+            for(k3=0;k3<=1;k3++) for(j3=0;j3<=1;j3++){
                 
 
                 // Store into location (j+j2-1,k+k2-1)
                 ind2=(j+j2-1)+(n-1)*(k+k2-1);
                 ind3=j+j3+(n+1)*(k+k3);
 
-                // TO DO
                 result=quadracture_calc2(k,j,j2,k2,j3,k3);
                 b[ind2]+=result*f[ind3];
+                // printf("ind2 %d result %g\n",ind2,result*f[ind3]);
 
             }
 
@@ -270,7 +279,8 @@ void bilinear_2d_fe::assemble_b() {
     }
     // Normalize the results, and add in the Neumann condition to the last
     // entry
-    for(i=0;i<dof+4*n;i++) b[i]*=h;
+    for(i=0;i<dof;i++) b[i]*=(h*h);
+    // for(i=0;i<dof;i++) printf("b[%d] %g\n",i,b[i]);
     //b[3*n-1]+=2*g;
 }
 
@@ -300,21 +310,21 @@ void bilinear_2d_fe::print(const char* filename) {
  * \return The L2 norm. */
 double bilinear_2d_fe::l2_norm_mms() {
     double l2=0.,xx=-1.,yy=-1.,vv,ww;
-    for(int j=0;j<n;j++) {
-        xx+=h;
+    for(int j=0;j<n-1;j++,yy+=h) {
         vv=xx*sqrt(1.-yy*yy/2.);
-        for(int i=0;i<n;i++){
-            yy+=h;
+        xx=-1.;
+        for(int i=0;i<n-1;i++,xx+=h){
             ww=yy*sqrt(1.-xx*xx/2.);
-            l2+=mms_dsq(vv,ww,x[j+i*n]);
+            l2+=mms_dsq(vv,ww,x[j+i*(n-1)]);
+            // printf("xx %g yy %g l2 %g\n",xx,yy,l2);
         }
-        l2+=mms_dsq(vv,ww,x[j+j*n]);
+        // l2+=mms_dsq(vv,ww,x[j+j*n]);
     }
 
     // Add the contribution at the last point, including a factor of 1/2 due to
     // the trapezoid rule. Note that there is no contribution at x=1, since the
     // numerical solution is zero there, and hence matches the manufactured
     // solution perfectly.
-    l2+=0.5*mms_dsq(sqrt(1./2.),sqrt(1./2.),x[dof-1]);
+    // l2+=0.5*mms_dsq(sqrt(1./2.),sqrt(1./2.),x[dof-1]);
     return sqrt(h*h*l2);
 }

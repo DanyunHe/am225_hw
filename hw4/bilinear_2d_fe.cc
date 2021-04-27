@@ -316,11 +316,12 @@ void bilinear_2d_fe::print(const char* filename) {
  * integral.
  * \return The L2 norm. */
 double bilinear_2d_fe::l2_norm_mms() {
-    double l2=0.,xx=-1.,yy=-1.,vv,ww;
-    for(int j=0;j<n-1;j++,yy+=h) {
-        vv=xx*sqrt(1.-yy*yy/2.);
-        xx=-1.;
-        for(int i=0;i<n-1;i++,xx+=h){
+    double l2=0.,xx,yy,vv,ww;
+    for(int j=0;j<n-1;j++) {
+        for(int i=0;i<n-1;i++){
+            xx=-1.+(i+1)*h;
+            yy=-1.+(j+1)*h;
+            vv=xx*sqrt(1.-yy*yy/2.);
             ww=yy*sqrt(1.-xx*xx/2.);
             l2+=mms_dsq(vv,ww,x[j+i*(n-1)]);
             // printf("xx %g yy %g l2 %g\n",xx,yy,l2);

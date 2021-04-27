@@ -8,8 +8,7 @@ int main() {
 #pragma omp parallel for schedule(dynamic) ordered
     for(int i=0;i<=10;i++) {
 
-        // Create the finite-element problem and set the Neumann boundary
-        // condition to match the manufactured solution
+        // Create the finite-element problem 
         int j=int(10*pow(100,(1/30.)*i)+0.5);
 
         // Construct the finite-element class

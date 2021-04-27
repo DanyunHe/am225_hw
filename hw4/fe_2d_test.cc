@@ -11,7 +11,7 @@ int main() {
     bf.init();
 
     // Optional command to print the matrix in text form
-    bf.print_matrix();
+    // bf.print_matrix();
 
     // Solve the finite-element problem using the conjugate gradient method
     bf.solve();

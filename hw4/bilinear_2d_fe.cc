@@ -287,9 +287,16 @@ void bilinear_2d_fe::assemble_b() {
 /** Prints the solution.
  * \param[in] fp a file handle to write to. */
 void bilinear_2d_fe::print(FILE *fp) {
-    double xx=1+h;
-    fprintf(fp,"1 0 0 %g\n",*f);
-    for(int i=0;i<dof;i++,xx+=h) fprintf(fp,"%g %g %g %g\n",xx,x[i],b[i],f[i+1]);
+    double xx,yy;
+    fprintf(fp,"-1 -1 0 0 %g\n",*f);
+    for(int i=0;i<n-1;i++){
+        for(int j=0;j<n-1;j++){
+            xx=-1.+(i+1)*h;
+            yy=-1.+(j+1)*h;
+            fprintf(fp,"%g %g %g %g %g\n",xx,yy,x[j+(n-1)*i],b[j+(n-1)*i],f[j+(n+1)*i]);
+
+        }
+    }
 }
 
 /** Prints the solution.

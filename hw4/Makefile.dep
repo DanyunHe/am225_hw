@@ -1,4 +1,5 @@
 conj_grad.o: conj_grad.cc conj_grad.hh blas.h
 cubic_1d_fe.o: cubic_1d_fe.cc cubic_1d_fe.hh conj_grad.hh blas.h
+alter_1d_fe.o: alter_1d_fe.cc alter_1d_fe.hh conj_grad.hh blas.h
 bilinear_2d_fe.o:bilinear_2d_fe.cc bilinear_2d_fe.hh conj_grad.hh blas.h
 quadrat.o: quadrat.cc quadrat.hh

@@ -2,7 +2,7 @@
 include ../config.mk
 
 # Lists of files to be built
-objs=conj_grad.o cubic_1d_fe.o quadrat.o bilinear_2d_fe.o
+objs=conj_grad.o cubic_1d_fe.o quadrat.o bilinear_2d_fe.o alter_1d_fe.o
 src=$(patsubst %.o,%.cc,$(objs))
 execs=fe_1d_test fe_1d_conv q2d_test fe_2d_test fe_2d_conv
 

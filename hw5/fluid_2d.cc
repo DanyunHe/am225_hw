@@ -206,8 +206,10 @@ void fluid_2d::step_forward(double dt) {
         f.us=f.u-uc*ux-vc*uy+uxx+uyy;
         f.vs=f.v-uc*vx-vc*vy+vxx+vyy;
 
-        color_eno2(rx,gx,bx,hx,fp[1],f,fp[-1],fp[-2]);
-        color_eno2(ry,gy,by,hy,fp[ml],f,fp[-ml],fp[-2*ml]);
+        uc>0?color_eno2(rx,gx,bx,hx,fp[1],f,fp[-1],fp[-2])
+            :color_eno2(rx,gx,bx,-hx,fp[1],f,fp[-1],fp[-2]);
+        vc>0?color_eno2(ry,gy,by,hy,fp[ml],f,fp[-ml],fp[-2*ml])
+            :color_eno2(ry,gy,by,-hy,fp[ml],f,fp[-ml],fp[-2*ml]);
 
         f.r=f.r-dt*uc*rx-dt*vc*ry;
         f.g=f.g-dt*uc*gx-dt*vc*gy;

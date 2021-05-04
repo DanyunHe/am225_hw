@@ -21,9 +21,9 @@ int main() {
 
     // Initialize the tracers, and set the timestep based on multiplying the
     // maximum allowable by a padding factor
-    f2d.initialize(8,0.6);
+    f2d.initialize(8,0.3);
 
     // Run the simulation for a specified duration, outputting snapshots at
     // regular intervals
-    f2d.solve(0.5,5);
+    f2d.solve(0.5,100);
 }

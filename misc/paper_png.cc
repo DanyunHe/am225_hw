@@ -7,26 +7,26 @@
 int main() {
 
     FILE *fp;
-    double *rs;
-    double *gs;
-    double *bs;
+    float *rs;
+    float *gs;
+    float *bs;
     // Size of ouptut image
     const int m=256,n=256,mn=m*n;
     
-    rs=(double*) malloc(sizeof(double)*mn);
-    gs=(double*) malloc(sizeof(double)*mn);
-    bs=(double*) malloc(sizeof(double)*mn);
+    rs=(float*) malloc(sizeof(float)*mn);
+    gs=(float*) malloc(sizeof(float)*mn);
+    bs=(float*) malloc(sizeof(float)*mn);
     
-    fp=fopen("../hw5/ftest.out/r.1","rb");
-    fread(rs,sizeof(double),mn,fp);
+    fp=fopen("../hw5/ftest.out/r.9","rb");
+    fread(rs,sizeof(float),mn,fp);
     fclose(fp);
 
-    fp=fopen("../hw5/ftest.out/g.1","rb");
-    fread(gs,sizeof(double),mn,fp);
+    fp=fopen("../hw5/ftest.out/g.9","rb");
+    fread(gs,sizeof(float),mn,fp);
     fclose(fp);
 
-    fp=fopen("../hw5/ftest.out/b.1","rb");
-    fread(bs,sizeof(double),mn,fp);
+    fp=fopen("../hw5/ftest.out/b.9","rb");
+    fread(bs,sizeof(float),mn,fp);
     fclose(fp);
 
    
@@ -40,9 +40,9 @@ int main() {
             idx=j+i*m;
             *(zp++)=rs[j+i*m];
             // *(zp++)=1.;
-            *(zp++)=1.;
+            // *(zp++)=1.;
             *(zp++)=gs[j+i*m];
-            // *(zp++)=bs[j+i*m];
+            *(zp++)=bs[j+i*m];
             printf("r %g g %g b %g\n",rs[idx],gs[idx],bs[idx]);
         }
     }

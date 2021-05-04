@@ -12,5 +12,7 @@ fftw_iflags=
 fftw_lflags=-lfftw3
 
 # libpng flags (installed via Homebrew)
-png_iflags=
-png_lflags=-lpng
+# png_iflags=
+# png_lflags=-lpng
+png_iflags=-I/usr/local/include
+png_lflags=-L/usr/local/lib -lpng

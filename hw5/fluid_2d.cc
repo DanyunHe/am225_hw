@@ -211,9 +211,9 @@ void fluid_2d::step_forward(double dt) {
         vc>0?color_eno2(ry,gy,by,hy,fp[ml],f,fp[-ml],fp[-2*ml])
             :color_eno2(ry,gy,by,-hy,fp[ml],f,fp[-ml],fp[-2*ml]);
 
-        f.r=f.r-dt*uc*rx-dt*vc*ry;
-        f.g=f.g-dt*uc*gx-dt*vc*gy;
-        f.b=f.b-dt*uc*bx-dt*vc*by;
+        f.r=f.r-uc*rx-vc*ry;
+        f.g=f.g-uc*gx-vc*gy;
+        f.b=f.b-uc*bx-vc*by;
     }
 
     // Calculate the source term for the finite-element projection, doing

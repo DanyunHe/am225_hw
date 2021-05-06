@@ -17,7 +17,7 @@ int main() {
 
     // Construct the simulation class, setting the number of gridpoints, the
     // periodicity, and physical constants
-    fluid_2d f2d(256,256,false,false,-1,1,-1,1,0.002,1.,fflags,fn);
+    fluid_2d f2d(1024,1024,false,false,-1,1,-1,1,0.002,1.,fflags,fn);
 
     // Initialize the tracers, and set the timestep based on multiplying the
     // maximum allowable by a padding factor
@@ -25,5 +25,7 @@ int main() {
 
     // Run the simulation for a specified duration, outputting snapshots at
     // regular intervals
-    f2d.solve(0.5,100);
+    f2d.solve(0.2,10);
+    f2d.add_layer();
+    f2d.solve(0.5,10);
 }

@@ -85,6 +85,8 @@ class fluid_2d {
         void solve(double duration,int frames);
         void step_forward(double dt);
         void init_fields();
+        void add_layer();
+        void add_layer2();
         void write_files(int k);
         void initialize(int ntrace_,double dt_pad,double max_vel=-1);
         double advection_dt();

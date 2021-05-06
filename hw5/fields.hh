@@ -27,7 +27,7 @@ struct field {
     }
     inline void no_slip(field &f) {
         u=-f.u;v=-f.v;
-        r=-f.r;g=-f.g;b=-f.b;
+        r=f.r;g=f.g;b=f.b;
     }
     /** Computes the maximum allowable timestep based on the CFL restriction
      * from the velocity stored in this class.

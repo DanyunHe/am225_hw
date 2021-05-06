@@ -110,20 +110,57 @@ void fluid_2d::init_fields() {
             double x=ax+dx*(i+0.5),xx=x+0.5;
             fp->u=4*exp(-20*(x*x+y*y));
             fp->v=exp(-20*(x*x+y*y))-5*exp(-30*(xx*xx+yy*yy));
-            (fp++)->p=0;
 
             // Initialize color fields 
-            if(int(floor(6*xx+6)+floor(6*yy+6))%2==0){
+            // if(int(floor(6*x+6)+floor(6*y+6))%2==0){
+            //     fp->r=1.;
+            //     fp->g=1.;
+            //     fp->b=1.;
+            // }
+            // else{
+            //     fp->r=0.2;
+            //     fp->g=0.4;
+            //     fp->b=0.9;
+
+            // }
+
+            double absx=fabs(x);
+            if(absx<1/6.){
+                fp->r=1.;
+                fp->g=0.;
+                fp->b=0.;
+            }
+            else if(absx<2/6.){
+                fp->r=1.;
+                fp->g=0.5;
+                fp->b=0.;
+            }
+            else if(absx<3/6.){
                 fp->r=1.;
                 fp->g=1.;
-                fp->b=1.;
-            }
-            else{
-                fp->r=0.2;
-                fp->g=0.4;
-                fp->b=0.9;
+                fp->b=0.;
 
             }
+            else if(absx<4/6.){
+                fp->r=0.;
+                fp->g=1.;
+                fp->b=0.;
+
+            }
+            else if(absx<5/6.){
+                fp->r=0.;
+                fp->g=0.;
+                fp->b=1.;
+
+            }
+            else{
+                fp->r=0.5;
+                fp->g=0.;
+                fp->b=1.;
+
+            }
+        (fp++)->p=0;
+
         }
         fp->p=0;
     }
@@ -135,6 +172,48 @@ void fluid_2d::init_fields() {
     // Now that the primary grid points are set up, initialize the ghost
     // points according to the boundary conditions
     set_boundaries();
+}
+
+void fluid_2d::add_layer(){
+
+#pragma omp parallel for
+    for(int j=0;j<n;j++) {
+        double y=ay+dy*(j+0.5),yy=y+0.5;
+        field *fp=fm+ml*j;
+        for(int i=0;i<m;i++) {
+            double x=ax+dx*(i+0.5),xx=x+0.5;
+
+            double rr=sqrt(x*x+y*y);
+            if(rr<0.3){
+                fp->r=1.;
+                fp->g=1.;
+                (fp++)->b=1.;
+            }
+            
+        }
+    }
+
+}
+
+void fluid_2d::add_layer2(){
+
+#pragma omp parallel for
+    for(int j=0;j<n;j++) {
+        double y=ay+dy*(j+0.5),yy=y+0.5;
+        field *fp=fm+ml*j;
+        for(int i=0;i<m;i++) {
+            double x=ax+dx*(i+0.5),xx=x+0.5;
+
+            double rr=sqrt(x*x+y*y);
+            if(rr>0.8){
+                fp->r=1.;
+                fp->g=1.;
+                (fp++)->b=1.;
+            }
+            
+        }
+    }
+
 }
 
 /** Carries out the simulation for a specified time interval using the direct
@@ -503,7 +582,7 @@ void fluid_2d::output(const char *prefix,const int mode,const int sn,const bool 
     float *bp=buf+1,*be=bp+lx;
     *buf=lx;
     for(i=0;i<lx;i++) *(bp++)=ax+(i+disp)*dx;
-    fwrite(buf,sizeof(float),lx+1,outf);
+    // fwrite(buf,sizeof(float),lx+1,outf);
 
     // Output the field values to the file
     field *fr=ghost?fbase:fm;
